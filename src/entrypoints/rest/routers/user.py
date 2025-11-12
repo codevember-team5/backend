@@ -1,15 +1,17 @@
-from fastapi import APIRouter
-from pymongo import AsyncMongoClient
+from fastapi import APIRouter, Query, Depends
 from starlette import status
 
-from src.database.database import get_db_connection
+from src.database.database import DeviceDoc
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
-from src.entrypoints.rest.schemas.user import GetUsersResponse, User
-from src.settings import settings
+from src.entrypoints.rest.schemas.user import GetUsersResponse
+from src.user.repository import BeanieUserRepository
+from src.user.service import UserService
 
 # router definition
 router = APIRouter(prefix="/user", tags=["User"])
 
+def user_service_factory() -> UserService:
+    return UserService(repository=BeanieUserRepository())
 
 @router.get(
     "/",
@@ -17,15 +19,15 @@ router = APIRouter(prefix="/user", tags=["User"])
     response_model=GetUsersResponse,
     responses={
         status.HTTP_200_OK: {
-            "description": "Returns the filtered list of OAs",
+            "description": "Returns the list of Users",
         },
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponseSchema, "description": "Invalid input data"},
     },
 )
-def get_users():
-    client = AsyncMongoClient(
-        host=settings.db.uri,
-    )
-    client.get_database(settings.db.dbname)
-    print(client.get_database(settings.db.dbname))
-    return GetUsersResponse(users=[User(fullname="John Doe", devices=["device1"])])
+async def get_users(
+    skip: int | None = Query(default=None, ge=0),
+    limit: int | None = Query(default=None, ge=1, le=200),
+    user_service: UserService = Depends(user_service_factory),
+):
+    users = await user_service.get_users(skip, limit)
+    return GetUsersResponse(users=users)

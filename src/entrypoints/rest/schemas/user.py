@@ -1,12 +1,9 @@
 from pydantic import BaseModel
 
-class User(BaseModel):
-    """User schema."""
+from src.user import model
 
-    fullname: str
-    devices: list[str]
 
 class GetUsersResponse(BaseModel):
     """Get users response schema."""
 
-    users: list[User]
+    users: list[model.User]
