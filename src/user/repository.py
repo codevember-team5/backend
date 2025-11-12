@@ -2,6 +2,7 @@ import abc
 from collections import defaultdict
 
 from src.database import database
+from src.database.database import DeviceDoc
 from src.user import model
 from src.user.mapper import userdoc_to_domain
 
@@ -55,15 +56,15 @@ class BeanieUserRepository(AbstractUserRepository):
     async def _get(self, id: str) -> model.User | None:
         user = await database.UserDoc.get(id)
         devices = await database.DeviceDoc.find(database.DeviceDoc.user_id == id).to_list()
-        return userdoc_to_domain(user, [device.device_id for device in devices]) if user else None
+        return userdoc_to_domain(user, devices) if user else None
 
     async def _get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:
         users = await database.UserDoc.find_all().skip(skip).limit(limit).to_list()
         devices = await database.DeviceDoc.find_all().to_list()
 
-        devices_by_user: dict[str, list[str]] = defaultdict(list)
-        for d in devices:
-            if d.user_id:
-                devices_by_user[d.user_id].append(d.device_id)
+        devices_by_user: dict[str, list[DeviceDoc]] = defaultdict(list)
+        for device in devices:
+            if device.user_id:
+                devices_by_user[device.user_id].append(device)
 
         return [userdoc_to_domain(user, devices_by_user.get(user.user_id, [])) for user in users]
