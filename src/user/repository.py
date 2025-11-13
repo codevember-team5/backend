@@ -4,6 +4,11 @@ import abc
 
 from collections import defaultdict
 
+from beanie import PydanticObjectId
+from bson.errors import InvalidId
+from pydantic import ValidationError
+
+from src.common.exceptions import InvalidArgumentError
 from src.database import database
 from src.database.database import DeviceDoc
 from src.settings import get_logger
@@ -44,6 +49,34 @@ class AbstractUserRepository(abc.ABC):
         """
         return await self._get_all(skip, limit)
 
+    async def add(self, fullname: str) -> model.User:
+        """Add a new User.
+
+        Args:
+            fullname (str): Full name of the user.
+
+        Returns:
+            model.User: Created User model instance
+        """
+        return await self._add(fullname)
+
+    async def delete(self, user_id: str) -> None:
+        """Delete a User by id.
+
+        Args:
+            user_id (str): User unique identifier
+        """
+        return await self._delete(user_id)
+
+    async def assign_device_to_user(self, user_id: str, device_id: str) -> None:
+        """Assign a device to a User.
+
+        Args:
+            user_id (str): User unique identifier
+            device_id (str): Device unique identifier
+        """
+        return await self._assign_device_to_user(user_id, device_id)
+
     @abc.abstractmethod
     async def _get(self, uuid: str) -> model.User | None:
         raise NotImplementedError
@@ -52,13 +85,29 @@ class AbstractUserRepository(abc.ABC):
     async def _get_all(self, skip: int | None, limit: int | None) -> list[model.User]:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    async def _add(self, fullname: str) -> model.User:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def _delete(self, user_id: str) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def _assign_device_to_user(self, user_id: str, device_id: str) -> None:
+        raise NotImplementedError
+
 
 class BeanieUserRepository(AbstractUserRepository):
     """Concrete repository for Beanie managed database."""
 
     async def _get(self, user_id: str) -> model.User | None:
-        user = await database.UserDoc.get(user_id)
-        devices = await database.DeviceDoc.find(database.DeviceDoc.user_id == user_id).to_list()
+        try:
+            user = await database.UserDoc.get(user_id)
+        except (ValidationError, ValueError):
+            raise InvalidArgumentError("Invalid user id format")
+
+        devices = await database.DeviceDoc.find(database.DeviceDoc.id == user_id).to_list()
         return userdoc_to_domain(user, devices) if user else None
 
     async def _get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:
@@ -70,4 +119,31 @@ class BeanieUserRepository(AbstractUserRepository):
             if device.user_id:
                 devices_by_user[device.user_id].append(device)
 
-        return [userdoc_to_domain(user, devices_by_user.get(user.user_id, [])) for user in users]
+        return [userdoc_to_domain(user, devices_by_user.get(user.id, [])) for user in users]
+
+    async def _add(self, fullname: str) -> model.User:
+        user = database.UserDoc(fullname=fullname)
+        await user.insert()
+        devices = await database.DeviceDoc.find(database.DeviceDoc.user_id == user.id).to_list()
+        return userdoc_to_domain(user, devices)
+
+    async def _delete(self, user_id: str) -> None:
+        try:
+            user = await database.UserDoc.get(user_id)
+        except (ValidationError, ValueError):
+            raise InvalidArgumentError("Invalid user id format")
+
+        if user:
+            await user.delete()
+
+    async def _assign_device_to_user(self, user_id: str, device_id: str):
+        try:
+            user_id = PydanticObjectId(user_id)
+        except InvalidId:
+            raise InvalidArgumentError("Invalid user id format")
+
+        device = await database.DeviceDoc.find_one(database.DeviceDoc.device_id == device_id)
+
+        if device:
+            device.user_id = user_id
+            await device.save()
