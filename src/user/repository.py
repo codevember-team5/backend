@@ -1,10 +1,17 @@
+"""User repository."""
+
 import abc
+
 from collections import defaultdict
 
 from src.database import database
 from src.database.database import DeviceDoc
-from src.user import model
-from src.user.mapper import userdoc_to_domain
+from src.settings import get_logger
+from src.user.domain import model
+from src.user.domain.mapper import userdoc_to_domain
+
+# logger
+logger = get_logger()
 
 
 class AbstractUserRepository(abc.ABC):
@@ -14,19 +21,16 @@ class AbstractUserRepository(abc.ABC):
         abc (abc.ABC): Abstract class
     """
 
-
-    async def get(self, id: str) -> model.User | None:
+    async def get(self, user_id: str) -> model.User | None:
         """Get User object by id.
 
         Args:
-            id (str): User unique identifier
+            user_id (str): User unique identifier
 
         Returns:
             model.User | None: User model instance or None
         """
-        user = await self._get(id)
-        return user
-
+        return await self._get(user_id)
 
     async def get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:
         """Get a list of all User objects.
@@ -38,8 +42,7 @@ class AbstractUserRepository(abc.ABC):
         Returns:
             list[model.User]: list of User model instances
         """
-        user_list = await self._get_all(skip, limit)
-        return user_list
+        return await self._get_all(skip, limit)
 
     @abc.abstractmethod
     async def _get(self, uuid: str) -> model.User | None:
@@ -53,9 +56,9 @@ class AbstractUserRepository(abc.ABC):
 class BeanieUserRepository(AbstractUserRepository):
     """Concrete repository for Beanie managed database."""
 
-    async def _get(self, id: str) -> model.User | None:
-        user = await database.UserDoc.get(id)
-        devices = await database.DeviceDoc.find(database.DeviceDoc.user_id == id).to_list()
+    async def _get(self, user_id: str) -> model.User | None:
+        user = await database.UserDoc.get(user_id)
+        devices = await database.DeviceDoc.find(database.DeviceDoc.user_id == user_id).to_list()
         return userdoc_to_domain(user, devices) if user else None
 
     async def _get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:

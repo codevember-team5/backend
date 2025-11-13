@@ -1,15 +1,22 @@
+"""Application settings module."""
+
 import sys
 
 from loguru import logger
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
+
 
 class CommonSettings(BaseSettings):
+    """Common settings for the application."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore",
         case_sensitive=True,
     )
+
 
 class DatabaseSettings(CommonSettings):
     """Database related settings.
@@ -28,7 +35,7 @@ class Settings(CommonSettings):
     Args:
         BaseSettings (BaseSettings): pydantic BaseSettings class
     """
-    
+
     db: DatabaseSettings = DatabaseSettings()
     debug: bool = Field(False, validation_alias="DEBUG")
     wait_for_debugger_connected: bool = Field(False, validation_alias="WAIT_FOR_DEBUGGER")
@@ -53,11 +60,11 @@ class Settings(CommonSettings):
                 logger.debug("Logger already initialized in another component, use that one")
         except ValueError:
             logger.exception("Error setting log level")
-    
 
 
 def get_logger():  # noqa: ANN201
     """Get logger."""
     return logger
+
 
 settings = Settings()

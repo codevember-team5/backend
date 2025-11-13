@@ -1,25 +1,33 @@
-import time
-from contextlib import asynccontextmanager
-import json
+"""REST API server."""
 
-from fastapi import FastAPI, APIRouter
+import json
+import time
+
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter
+from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import Response
 
 from src.database import database
 from src.entrypoints.rest.routers import user
-from src.settings import get_logger, settings
+from src.settings import get_logger
+from src.settings import settings
 
 # logger
 logger = get_logger()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Load the lifespan."""
     await database.init_db(app)
     try:
         yield
     finally:
         await app.state.mongo_client.close()
+
 
 app = FastAPI(
     lifespan=lifespan,
@@ -48,7 +56,6 @@ async def middleware(request: Request, call_next) -> Response:  # noqa: ANN001
     process_time = time.time() - start_time
     logger.debug(f"Request: {request.url.path} process time: {process_time}")
     return response
-
 
 
 # enable remote debugging if DEBUG env variable is set

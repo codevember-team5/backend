@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Query, Depends
+"""User Router Module."""
+
+from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import Query
 from starlette import status
 
-from src.database.database import DeviceDoc
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
 from src.entrypoints.rest.schemas.user import GetUsersResponse
 from src.user.repository import BeanieUserRepository
@@ -10,8 +13,11 @@ from src.user.service import UserService
 # router definition
 router = APIRouter(prefix="/user", tags=["User"])
 
+
 def user_service_factory() -> UserService:
+    """User service factory."""
     return UserService(repository=BeanieUserRepository())
+
 
 @router.get(
     "/",
@@ -28,6 +34,7 @@ async def get_users(
     skip: int | None = Query(default=None, ge=0),
     limit: int | None = Query(default=None, ge=1, le=200),
     user_service: UserService = Depends(user_service_factory),
-):
+) -> GetUsersResponse:
+    """Get Users."""
     users = await user_service.get_users(skip, limit)
     return GetUsersResponse(users=users)

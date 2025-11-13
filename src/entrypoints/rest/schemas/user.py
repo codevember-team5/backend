@@ -1,6 +1,8 @@
+"""User schemas for REST API."""
+
 from pydantic import BaseModel
 
-from src.user import model
+from src.user.domain import model
 
 
 class GetUsersResponse(BaseModel):
