@@ -1,6 +1,7 @@
 """Database connection and models using Beanie ODM."""
 
 from beanie import Document
+from beanie import PydanticObjectId
 from beanie import init_beanie
 from fastapi import FastAPI
 from pydantic import Field
@@ -25,7 +26,7 @@ async def init_db(app: FastAPI):
 class UserDoc(Document):
     """User document model."""
 
-    user_id: str | None = Field(None, description="User identifier")
+    user_id: PydanticObjectId = Field(..., description="User identifier", validation_alias="_id")
     fullname: str = Field(..., description="User full name")
 
     class Settings:
@@ -38,7 +39,7 @@ class DeviceDoc(Document):
     """Device document model."""
 
     device_id: str = Field(..., description="Unique identifier for the device")
-    user_id: str | None = Field(None, description="User identifier associated with the device")
+    user_id: PydanticObjectId | None = Field(None, description="User identifier associated with the device")
 
     class Settings:
         """Settings for DeviceDoc."""
