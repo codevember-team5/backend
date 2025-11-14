@@ -7,6 +7,7 @@ from pydantic import Field
 class User(BaseModel):
     """User model."""
 
+    id: str = Field()
     fullname: str = Field()
     devices: list[str] = Field(default_factory=list)
 

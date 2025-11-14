@@ -26,7 +26,6 @@ async def init_db(app: FastAPI):
 class UserDoc(Document):
     """User document model."""
 
-    user_id: PydanticObjectId = Field(..., description="User identifier", validation_alias="_id")
     fullname: str = Field(..., description="User full name")
 
     class Settings:
