@@ -90,6 +90,7 @@ async def delete_user(
             "description": "Device assigned to User successfully",
         },
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponseSchema, "description": "Invalid input data"},
+        status.HTTP_409_CONFLICT: {"model": ErrorResponseSchema, "description": "Device already assigned to a User"},
     },
 )
 async def assign_device_to_user(

@@ -37,6 +37,17 @@ class AbstractUserRepository(abc.ABC):
         """
         return await self._get(user_id)
 
+    async def get_user_from_device_id(self, device_id: str) -> model.User | None:
+        """Get User object by device id.
+
+        Args:
+            device_id (str): Device unique identifier
+
+        Returns:
+            model.User | None: User model instance or None
+        """
+        return await self._get_user_from_device_id(device_id)
+
     async def get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:
         """Get a list of all User objects.
 
@@ -97,6 +108,10 @@ class AbstractUserRepository(abc.ABC):
     async def _assign_device_to_user(self, user_id: str, device_id: str) -> None:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    async def _get_user_from_device_id(self, device_id: str):
+        raise NotImplementedError
+
 
 class BeanieUserRepository(AbstractUserRepository):
     """Concrete repository for Beanie managed database."""
@@ -147,3 +162,11 @@ class BeanieUserRepository(AbstractUserRepository):
         if device:
             device.user_id = user_id
             await device.save()
+
+    async def _get_user_from_device_id(self, device_id: str) -> model.User | None:
+        device = await database.DeviceDoc.find_one(database.DeviceDoc.device_id == device_id)
+
+        if device and device.user_id:
+            return await self.get(user_id=str(device.user_id))
+
+        return None

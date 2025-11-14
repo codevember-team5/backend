@@ -1,7 +1,11 @@
 """User service module."""
 
+from src.common.exceptions import NotUpdatableError
+from src.settings import get_logger
 from src.user.domain import model
 from src.user.repository import AbstractUserRepository
+
+logger = get_logger()
 
 
 class UserService:
@@ -46,5 +50,11 @@ class UserService:
         Arguments:
             user_id (str): Unique identifier of the user.
             device_id (str): Unique identifier of the device.
+
+        Raises:
+            NotUpdatableError: If the device is already assigned to a user.
         """
+        if user := await self.repository.get_user_from_device_id(device_id):
+            logger.info(f"Device {device_id} is already assigned to user {user.id}:{user.fullname}.")
+            raise NotUpdatableError(f"Device {device_id} is already assigned to a user.")
         return await self.repository.assign_device_to_user(user_id, device_id)
