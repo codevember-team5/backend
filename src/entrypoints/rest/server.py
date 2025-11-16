@@ -7,11 +7,18 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter
 from fastapi import FastAPI
+from starlette import status
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 from starlette.responses import Response
 
+from src.common.exceptions import InvalidArgumentError
+from src.common.exceptions import NotDeletableError
+from src.common.exceptions import NotFoundError
+from src.common.exceptions import NotUpdatableError
 from src.database import database
 from src.entrypoints.rest.routers import user
+from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
 from src.settings import get_logger
 from src.settings import settings
 
@@ -37,6 +44,45 @@ base_router = APIRouter(prefix="/api")
 base_router.include_router(user.router)
 # register routers
 app.include_router(base_router)
+
+
+# error handling
+@app.exception_handler(Exception)
+async def exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    """Exception handler.
+
+    Args:
+        _ (Request): http Request
+        exc (Exception): exception
+
+    Returns:
+        JSONResponse: JSON response with error details
+    """
+    res = JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "details": type(exc).__name__,
+        },
+    )
+    if isinstance(exc, NotFoundError):
+        res = JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content=ErrorResponseSchema(details=str(exc)).model_dump(),
+        )
+    if isinstance(exc, NotDeletableError | NotUpdatableError):
+        res = JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content=ErrorResponseSchema(details=str(exc)).model_dump(),
+        )
+    if isinstance(
+        exc,
+        InvalidArgumentError | ValueError,
+    ):
+        res = JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=ErrorResponseSchema(details=str(exc)).model_dump(),
+        )
+    return res
 
 
 # middleware
