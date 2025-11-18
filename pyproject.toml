@@ -111,6 +111,9 @@ ignore-variadic-names = true
 inline-quotes = "double"
 multiline-quotes = "double"
 
+[tool.ruff.lint.pylint]
+max-args = 8
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
