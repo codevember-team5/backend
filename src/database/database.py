@@ -1,5 +1,7 @@
 """Database connection and models using Beanie ODM."""
 
+from datetime import datetime
+
 from beanie import Document
 from beanie import PydanticObjectId
 from beanie import init_beanie
@@ -19,7 +21,7 @@ async def init_db(app: FastAPI):
     """Initialize the database connection and Beanie ODM."""
     client = get_db_connection()
     db = client[settings.db.dbname]
-    await init_beanie(database=db, document_models=[UserDoc, DeviceDoc])
+    await init_beanie(database=db, document_models=[UserDoc, DeviceDoc, ActivityLogsDoc])
     app.state.mongo_client = client
 
 
@@ -44,3 +46,18 @@ class DeviceDoc(Document):
         """Settings for DeviceDoc."""
 
         name = "devices"
+
+
+class ActivityLogsDoc(Document):
+    """Activity Logs document model."""
+
+    device_id: str = Field(..., description="Device unique identifier")
+    start_time: datetime = Field(..., description="Start time of the activity log")
+    stop_time: datetime | None = Field(None, description="End time of the activity log")
+    process: str = Field(..., description="Process name associated with the activity log")
+    window_title: str = Field(..., description="Window title associated with the activity log")
+
+    class Settings:
+        """Settings for UserDoc."""
+
+        name = "activity_logs"
