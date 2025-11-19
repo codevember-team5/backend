@@ -4,18 +4,8 @@ import sys
 
 from loguru import logger
 from pydantic import Field
-from pydantic_settings import BaseSettings
-from pydantic_settings import SettingsConfigDict
 
-
-class CommonSettings(BaseSettings):
-    """Common settings for the application."""
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        extra="ignore",
-        case_sensitive=True,
-    )
+from src.common.shared import CommonSettings
 
 
 class DatabaseSettings(CommonSettings):

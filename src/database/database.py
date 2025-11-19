@@ -5,7 +5,6 @@ from datetime import datetime
 from beanie import Document
 from beanie import PydanticObjectId
 from beanie import init_beanie
-from fastapi import FastAPI
 from pydantic import Field
 from pymongo import AsyncMongoClient
 
@@ -17,12 +16,10 @@ def get_db_connection() -> AsyncMongoClient:
     return AsyncMongoClient(host=settings.db.uri)
 
 
-async def init_db(app: FastAPI):
+async def init_db(client: AsyncMongoClient):
     """Initialize the database connection and Beanie ODM."""
-    client = get_db_connection()
     db = client[settings.db.dbname]
     await init_beanie(database=db, document_models=[UserDoc, DeviceDoc, ActivityLogsDoc])
-    app.state.mongo_client = client
 
 
 class UserDoc(Document):
