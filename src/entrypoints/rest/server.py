@@ -17,6 +17,7 @@ from src.common.exceptions import NotDeletableError
 from src.common.exceptions import NotFoundError
 from src.common.exceptions import NotUpdatableError
 from src.database import database
+from src.entrypoints.rest.routers import health
 from src.entrypoints.rest.routers import historical
 from src.entrypoints.rest.routers import user
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
@@ -48,6 +49,7 @@ app = FastAPI(
 )
 # base router
 base_router = APIRouter(prefix="/api")
+base_router.include_router(health.router)
 base_router.include_router(user.router)
 base_router.include_router(historical.router)
 # register routers
