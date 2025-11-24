@@ -33,7 +33,7 @@ class HistoricalService:
             start_time (datetime, optional): Filter logs with start_time greater than or equal to this value.
             stop_time (datetime, optional): Filter logs with stop_time less than or equal to this value.
         """
-        return await self.repository.get_all_by_devices(
+        return await self.repository.get_all_by_device(
             device_id=device_id,
             skip=skip,
             limit=limit,

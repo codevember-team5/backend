@@ -41,7 +41,7 @@ async def get_users(
 
 
 @mcp.tool()
-async def get_historical_activities_logs_by_devices_id(
+async def get_historical_activities_logs_by_device_id(
     device_id: str,
     skip: int | None = None,
     limit: int | None = None,

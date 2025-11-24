@@ -41,7 +41,7 @@ class AbstractHistoricalRepository(abc.ABC):
         abc (abc.ABC): Abstract class
     """
 
-    async def get_all_by_devices(
+    async def get_all_by_device(
         self,
         device_id: str,
         skip: int | None = None,
