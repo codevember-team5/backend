@@ -20,6 +20,7 @@ from src.database import database
 from src.entrypoints.rest.routers import historical
 from src.entrypoints.rest.routers import user
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
+from src.mcp_server.mcp_server import mcp
 from src.settings import get_logger
 from src.settings import settings
 
@@ -30,22 +31,31 @@ logger = get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load the lifespan."""
-    await database.init_db(app)
-    try:
-        yield
-    finally:
-        await app.state.mongo_client.close()
+    client = database.get_db_connection()
+    await database.init_db(client)
+    app.state.mongo_client = client
+
+    async with mcp_app.lifespan(app):
+        try:
+            yield
+        finally:
+            await app.state.mongo_client.close()
 
 
 app = FastAPI(
     lifespan=lifespan,
     docs_url="/api/docs",
 )
+# base router
 base_router = APIRouter(prefix="/api")
 base_router.include_router(user.router)
 base_router.include_router(historical.router)
 # register routers
 app.include_router(base_router)
+
+# mount MCP app
+mcp_app = mcp.http_app(path="/")
+app.mount("/mcp", mcp_app)
 
 
 # error handling
