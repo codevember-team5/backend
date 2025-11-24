@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter
 from fastapi import FastAPI
 from starlette import status
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.responses import Response
@@ -47,6 +48,16 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/api/docs",
 )
+
+# setup CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 # base router
 base_router = APIRouter(prefix="/api")
 base_router.include_router(health.router)
