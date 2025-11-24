@@ -7,8 +7,10 @@ from fastapi import Depends
 from fastapi import Query
 from starlette import status
 
+from src.entrypoints.rest.schemas.historical import ActivitySummaryQuery
 from src.entrypoints.rest.schemas.historical import GetActivitiesLogsResponse
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
+from src.historical.domain.model import ActivitySummaryResult
 from src.historical.repository import BeanieHistoricalRepository
 from src.historical.service import HistoricalService
 
@@ -50,3 +52,39 @@ async def get_activities_logs(
         stop_time=stop_time,
     )
     return GetActivitiesLogsResponse(activities_logs=activities_logs)
+
+
+@router.get(
+    "/{device_id}/activity-summary",
+    summary="Get summarized activity for a device and time range",
+    response_model=ActivitySummaryResult,
+    responses={
+        status.HTTP_200_OK: {"description": "Aggregated activity summary."},
+        status.HTTP_400_BAD_REQUEST: {"description": "Invalid input data."},
+    },
+)
+async def get_activity_summary(
+    device_id: str,
+    start_time: datetime = Query(..., description="Start of window (ISO8601)"),
+    end_time: datetime = Query(..., description="End of window (ISO8601)"),
+    group_by: str | None = Query(
+        None,
+        pattern="^(day)$",
+        description="Optional grouping dimension; currently only 'day'.",
+    ),
+    historical_service: HistoricalService = Depends(historical_service_factory),
+) -> ActivitySummaryResult:
+    """Get Activity Summary."""
+    query = ActivitySummaryQuery(
+        device_id=device_id,
+        start_time=start_time,
+        end_time=end_time,
+        group_by=group_by,
+    )
+
+    return await historical_service.get_activity_summary(
+        device_id=query.device_id,
+        start_time=query.start_time,
+        stop_time=query.end_time,
+        group_by=query.group_by,
+    )

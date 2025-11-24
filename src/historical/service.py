@@ -2,8 +2,12 @@
 
 from datetime import datetime
 
+from src.historical.aggregator import ActivityAggregator
 from src.historical.domain import model
+from src.historical.domain.model import ActivitySummaryResult
 from src.historical.repository import AbstractHistoricalRepository
+from src.historical.repository import normalize_end
+from src.historical.repository import normalize_start
 from src.settings import get_logger
 
 logger = get_logger()
@@ -12,9 +16,10 @@ logger = get_logger()
 class HistoricalService:
     """Historical service."""
 
-    def __init__(self, repository: AbstractHistoricalRepository):
+    def __init__(self, repository: AbstractHistoricalRepository, aggregator: ActivityAggregator | None = None):
         """Historical service init."""
         self.repository = repository
+        self.aggregator = aggregator or ActivityAggregator()
 
     async def get_activities_log(
         self,
@@ -39,4 +44,46 @@ class HistoricalService:
             limit=limit,
             start_time=start_time,
             stop_time=stop_time,
+        )
+
+    async def get_activity_summary(
+        self,
+        device_id: str,
+        start_time: datetime,
+        stop_time: datetime,
+        group_by: str | None = None,
+        page_size: int = 500,
+    ) -> ActivitySummaryResult:
+        """Fetch all logs in [start_time, stop_time], classify and aggregate.
+
+        Uses pagination over the underlying repository.
+        """
+        # normalize time as you already do
+        normalized_start = normalize_start(start_time)
+        normalized_stop = normalize_end(stop_time)
+
+        logs: list[model.ActivityLogs] = []
+        skip = 0
+
+        while True:
+            batch = await self.repository.get_all(
+                device_id=device_id,
+                skip=skip,
+                limit=page_size,
+                start_time=normalized_start,
+                stop_time=normalized_stop,
+            )
+            if not batch:
+                break
+            logs.extend(batch)
+            if len(batch) < page_size:
+                break
+            skip += page_size
+
+        return self.aggregator.classify_and_aggregate(
+            device_id=device_id,
+            logs=logs,
+            start_time=normalized_start,
+            stop_time=normalized_stop,
+            group_by_day=(group_by == "day"),
         )
