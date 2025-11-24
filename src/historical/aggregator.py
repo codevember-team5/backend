@@ -161,7 +161,6 @@ class ActivityAggregator:
             days_summary = self._aggregate_by_day(classified_activities)
 
         return ActivitySummaryResult(
-            device_id=device_id,
             start_time=start_time,
             stop_time=stop_time,
             group_by="day" if group_by_day else None,

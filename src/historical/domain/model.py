@@ -84,7 +84,6 @@ class DailyActivitySummary(BaseModel):
 class ActivitySummaryResult(BaseModel):
     """Activity summary result model."""
 
-    device_id: str
     start_time: datetime
     stop_time: datetime
     group_by: Literal["day"] | None = None
