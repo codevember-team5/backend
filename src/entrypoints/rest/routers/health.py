@@ -15,8 +15,9 @@ router = APIRouter(prefix="/health", tags=["Health"])
 START_TIME = time.time()
 
 
-@router.get(
+@router.api_route(
     "/",
+    methods=["GET", "HEAD"],
     summary="Get Health Check",
     response_model=GetHealthResponse,
     responses={
