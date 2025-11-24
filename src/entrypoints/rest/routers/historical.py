@@ -39,8 +39,22 @@ async def get_activities_logs(
     device_id: str,
     skip: int | None = Query(default=None, ge=0),
     limit: int | None = Query(default=None, ge=1, le=200),
-    start_time: datetime | None = Query(default=None),
-    stop_time: datetime | None = Query(default=None),
+    start_time: datetime | None = Query(
+        default=None,
+        description=(
+            "Start of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "00:00 UTC will be used."
+        ),
+    ),
+    stop_time: datetime | None = Query(
+        default=None,
+        description=(
+            "End of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "23:59 UTC will be used."
+        ),
+    ),
     historical_service: HistoricalService = Depends(historical_service_factory),
 ) -> GetActivitiesLogsResponse:
     """Get Activities Logs."""
@@ -65,8 +79,22 @@ async def get_activities_logs(
 )
 async def get_activity_summary(
     device_id: str,
-    start_time: datetime = Query(..., description="Start of window (ISO8601)"),
-    end_time: datetime = Query(..., description="End of window (ISO8601)"),
+    start_time: datetime = Query(
+        ...,
+        description=(
+            "Start of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "00:00 UTC will be used."
+        ),
+    ),
+    end_time: datetime = Query(
+        ...,
+        description=(
+            "End of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "23:59 UTC will be used."
+        ),
+    ),
     group_by: str | None = Query(
         None,
         pattern="^(day)$",

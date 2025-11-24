@@ -9,6 +9,7 @@ from src.mcp_server.settings import settings
 mcp = FastMCP("backend-team5-mcp-server")
 
 ACTIVITY_LOGS_PATH = "/api/historical/{device_id}/activities-logs"
+ACTIVITY_SUMMARY_PATH = "/api/historical/{device_id}/activity-summary"
 USERS_PATH = "/api/user"
 
 
@@ -71,6 +72,37 @@ async def get_historical_activities_logs(
         resp = await client.get(
             ACTIVITY_LOGS_PATH.format(device_id=device_id),
             params=params or None,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@mcp.tool()
+async def get_activity_summary(
+    device_id: str,
+    start_time: str,
+    end_time: str,
+    group_by: str | None = None,
+) -> dict:
+    """Get summarized activity for a device and time range.
+
+    Args:
+        device_id: Device ID
+        start_time: start of window (ISO8601 string)
+        end_time: end of window (ISO8601 string)
+        group_by: optional grouping dimension (e.g. `day`)
+    """
+    params: dict[str, object] = {
+        "start_time": start_time,
+        "end_time": end_time,
+    }
+    if group_by is not None:
+        params["group_by"] = group_by
+
+    async with httpx.AsyncClient(base_url=settings.backend_base_url, follow_redirects=True) as client:
+        resp = await client.get(
+            ACTIVITY_SUMMARY_PATH.format(device_id=device_id),
+            params=params,
         )
         resp.raise_for_status()
         return resp.json()
