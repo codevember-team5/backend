@@ -5,6 +5,8 @@ import httpx
 from fastmcp import FastMCP
 
 from src.mcp_server.settings import settings
+from src.user.repository import BeanieUserRepository
+from src.user.service import UserService
 
 mcp = FastMCP("backend-team5-mcp-server")
 
@@ -26,20 +28,14 @@ async def get_users(
         skip: offset
         limit: number of results
     """
-    params: dict[str, object] = {}
+    repo = BeanieUserRepository()
+    service = UserService(repository=repo)
 
-    if skip is not None:
-        params["skip"] = skip
-    if limit is not None:
-        params["limit"] = limit
+    users = await service.get_users(skip=skip, limit=limit)
 
-    async with httpx.AsyncClient(base_url=settings.backend_base_url, follow_redirects=True) as client:
-        resp = await client.get(
-            USERS_PATH,
-            params=params or None,
-        )
-        resp.raise_for_status()
-        return resp.json()
+    return {
+        "users": [user.model_dump() for user in users],
+    }
 
 
 @mcp.tool()
