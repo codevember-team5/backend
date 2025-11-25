@@ -118,11 +118,13 @@ class BeanieUserRepository(AbstractUserRepository):
 
     async def _get(self, user_id: str) -> model.User | None:
         try:
-            user = await database.UserDoc.get(user_id)
-        except (ValidationError, ValueError):
+            user_id = PydanticObjectId(user_id)
+        except InvalidId:
             raise InvalidArgumentError("Invalid user id format")
 
-        devices = await database.DeviceDoc.find(database.DeviceDoc.id == user_id).to_list()
+        user = await database.UserDoc.get(user_id)
+        devices = await DeviceDoc.find(DeviceDoc.user_id == user_id).to_list()
+
         return userdoc_to_domain(user, devices) if user else None
 
     async def _get_all(self, skip: int | None = None, limit: int | None = None) -> list[model.User]:
