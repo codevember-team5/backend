@@ -19,6 +19,16 @@ class DatabaseSettings(CommonSettings):
     dbname: str = Field("dbname", validation_alias="MONGO_DB")
 
 
+class AiAgentSettings(CommonSettings):
+    """AI Agent related settings.
+
+    Args:
+        BaseSettings (BaseSettings): pydantic BaseSettings class
+    """
+
+    ai_api_key: str = Field("", validation_alias="AI_API_KEY")
+
+
 class Settings(CommonSettings):
     """Application settings.
 
@@ -27,6 +37,7 @@ class Settings(CommonSettings):
     """
 
     db: DatabaseSettings = DatabaseSettings()
+    ai_agent: AiAgentSettings = AiAgentSettings()
     debug: bool = Field(False, validation_alias="DEBUG")
     wait_for_debugger_connected: bool = Field(False, validation_alias="WAIT_FOR_DEBUGGER")
     log_level: str = Field("INFO", validation_alias="LOG_LEVEL")

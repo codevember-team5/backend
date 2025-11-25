@@ -9,6 +9,7 @@ class MCPSettings(CommonSettings):
     """Settings for the MCP server application."""
 
     backend_base_url: str = Field("http://localhost:8000", validation_alias="MCP_BACKEND_BASE_URL")
+    mcp_base_url: str = Field("/mcp", validation_alias="MCP_BASE_URL")
 
 
 settings = MCPSettings()
