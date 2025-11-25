@@ -5,13 +5,16 @@ import datetime
 
 from datetime import time
 
+from beanie import PydanticObjectId
 from beanie.odm.operators.find.comparison import GTE
 from beanie.odm.operators.find.comparison import LTE
 from beanie.odm.operators.find.comparison import NE
 from beanie.odm.operators.find.comparison import BaseFindComparisonOperator
 from beanie.odm.operators.find.comparison import Eq
 from beanie.odm.operators.find.comparison import In
+from bson.errors import InvalidId
 
+from src.common.exceptions import InvalidArgumentError
 from src.database.database import ActivityLogsDoc
 from src.database.database import DeviceDoc
 from src.historical.domain import model
@@ -154,6 +157,11 @@ class BeanieHistoricalRepository(AbstractHistoricalRepository):
         start_time: datetime.datetime | None = None,
         stop_time: datetime.datetime | None = None,
     ) -> list[model.ActivityLogs]:
+        try:
+            user_id = PydanticObjectId(user_id)
+        except InvalidId:
+            raise InvalidArgumentError("Invalid user id format")
+
         devices = await DeviceDoc.find(DeviceDoc.user_id == user_id).to_list()
         device_ids = [d.device_id for d in devices]
 
