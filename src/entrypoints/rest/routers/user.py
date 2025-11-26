@@ -5,9 +5,11 @@ from fastapi import Depends
 from fastapi import Query
 from starlette import status
 
+from src.common.exceptions import NotFoundError
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
 from src.entrypoints.rest.schemas.user import CreateUserRequest
 from src.entrypoints.rest.schemas.user import CreateUserResponse
+from src.entrypoints.rest.schemas.user import GetUserResponse
 from src.entrypoints.rest.schemas.user import GetUsersResponse
 from src.user.repository import BeanieUserRepository
 from src.user.service import UserService
@@ -40,6 +42,29 @@ async def get_users(
     """Get Users."""
     users = await user_service.get_users(skip, limit)
     return GetUsersResponse(users=users)
+
+
+@router.get(
+    "/{user_id}",
+    summary="Get User by user_id",
+    response_model=GetUserResponse,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Returns the User by user_id",
+        },
+        status.HTTP_400_BAD_REQUEST: {"model": ErrorResponseSchema, "description": "Invalid input data"},
+        status.HTTP_404_NOT_FOUND: {"model": ErrorResponseSchema, "description": "User not found"},
+    },
+)
+async def get_users_by_user_id(
+    user_id: str,
+    user_service: UserService = Depends(user_service_factory),
+) -> GetUserResponse:
+    """Get User by user id."""
+    user = await user_service.get_user(user_id)
+    if not user:
+        raise NotFoundError("User not found")
+    return GetUserResponse(user=user)
 
 
 @router.post(
