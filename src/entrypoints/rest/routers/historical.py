@@ -10,6 +10,8 @@ from starlette import status
 from src.entrypoints.rest.schemas.historical import GetActivitiesLogsResponse
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
 from src.historical.domain.model import ActivitySummaryResult
+from src.historical.domain.model import AttentionLevelSummaryResult
+from src.historical.domain.model import GroupByQuery
 from src.historical.repository import BeanieHistoricalRepository
 from src.historical.service import HistoricalService
 
@@ -139,9 +141,8 @@ async def get_activity_summary_by_device(
             "23:59 UTC will be used."
         ),
     ),
-    group_by: str | None = Query(
-        None,
-        pattern="^(day)$",
+    group_by: list[GroupByQuery] = Query(
+        [],
         description="Optional grouping dimension; currently only 'day'.",
     ),
     historical_service: HistoricalService = Depends(historical_service_factory),
@@ -182,15 +183,56 @@ async def get_activity_summary_by_user(
             "23:59 UTC will be used."
         ),
     ),
-    group_by: str | None = Query(
-        None,
-        pattern="^(day)$",
+    group_by: list[GroupByQuery] = Query(
+        [],
         description="Optional grouping dimension; currently only 'day'.",
     ),
     historical_service: HistoricalService = Depends(historical_service_factory),
 ) -> ActivitySummaryResult:
     """Get Activity Summary by user."""
     return await historical_service.get_activity_summary_by_user(
+        user_id=user_id,
+        start_time=start_time,
+        stop_time=end_time,
+        group_by=group_by,
+    )
+
+
+@router.get(
+    "/user/{user_id}/attention-level-summary",
+    summary="Get summarized attention level for a user and time range",
+    response_model=AttentionLevelSummaryResult,
+    responses={
+        status.HTTP_200_OK: {"description": "Attention level summary."},
+        status.HTTP_400_BAD_REQUEST: {"description": "Invalid input data."},
+    },
+)
+async def get_attention_level_summary_by_user(
+    user_id: str,
+    start_time: datetime = Query(
+        ...,
+        description=(
+            "Start of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "00:00 UTC will be used."
+        ),
+    ),
+    end_time: datetime = Query(
+        ...,
+        description=(
+            "End of the time window (ISO8601). "
+            "If the time component is omitted and only the date is provided, "
+            "23:59 UTC will be used."
+        ),
+    ),
+    group_by: list[GroupByQuery] = Query(
+        ...,
+        description="Grouping dimension; currently only 'day'.",
+    ),
+    historical_service: HistoricalService = Depends(historical_service_factory),
+) -> AttentionLevelSummaryResult:
+    """Get Attention Level Summary by user."""
+    return await historical_service.get_attention_level_summary_by_user(
         user_id=user_id,
         start_time=start_time,
         stop_time=end_time,

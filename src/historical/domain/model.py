@@ -3,10 +3,16 @@
 from datetime import date
 from datetime import datetime
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel
 from pydantic import Field
+
+
+class GroupByQuery(str, Enum):
+    """Group by query enum."""
+
+    HOUR = "hour"
+    DAY = "day"
 
 
 class ActivityLogs(BaseModel):
@@ -17,6 +23,17 @@ class ActivityLogs(BaseModel):
     stop_time: datetime | None = Field(None, description="End time of the activity log")
     process: str = Field(..., description="Process name associated with the activity log")
     window_title: str = Field(..., description="Window title associated with the activity log")
+
+
+class ActivityLogsAttentionLevel(ActivityLogs):
+    """Activity Logs model with attention level."""
+
+    level: int = Field(..., description="Attention level associated with the activity log")
+    total_seconds: float = Field(..., description="Total seconds for the activity log")
+    total_seconds_productive: float = Field(
+        ...,
+        description="Total seconds for the activity log based on productive time",
+    )
 
 
 class ActivityCategory(str, Enum):
@@ -86,7 +103,7 @@ class ActivitySummaryResult(BaseModel):
 
     start_time: datetime
     stop_time: datetime
-    group_by: Literal["day"] | None = None
+    group_by: list[GroupByQuery]
     total_seconds: float
     categories: list[ActivityCategorySummary] = Field(
         default_factory=list,
@@ -95,4 +112,42 @@ class ActivitySummaryResult(BaseModel):
     days: list[DailyActivitySummary] = Field(
         default_factory=list,
         description="Daily breakdown when group_by == 'day'.",
+    )
+
+
+class ProcessWindowLevel(BaseModel):
+    """Process Window Level model."""
+
+    process: str
+    window_title: str
+    level: int
+
+
+class DailyAttentionLevelSummary(BaseModel):
+    """Daily attention level summary model."""
+
+    day: date
+    percentage: float
+
+
+class HourAttentionLevelSummary(BaseModel):
+    """Hour attention level summary model."""
+
+    hour: datetime
+    percentage: float
+
+
+class AttentionLevelSummaryResult(BaseModel):
+    """Attention Level summary result model."""
+
+    start_time: datetime
+    stop_time: datetime
+    group_by: list[GroupByQuery]
+    days: list[DailyAttentionLevelSummary] = Field(
+        default_factory=list,
+        description="Daily breakdown when group_by == 'day'.",
+    )
+    hours: list[HourAttentionLevelSummary] = Field(
+        default_factory=list,
+        description="Hourly breakdown when group_by == 'hour'.",
     )

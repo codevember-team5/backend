@@ -3,19 +3,26 @@
 import abc
 import datetime
 
+from collections import defaultdict
 from datetime import time
 
+from beanie import PydanticObjectId
 from beanie.odm.operators.find.comparison import GTE
 from beanie.odm.operators.find.comparison import LTE
 from beanie.odm.operators.find.comparison import NE
 from beanie.odm.operators.find.comparison import BaseFindComparisonOperator
 from beanie.odm.operators.find.comparison import Eq
 from beanie.odm.operators.find.comparison import In
+from bson.errors import InvalidId
 
+from src.common.exceptions import InvalidArgumentError
 from src.database.database import ActivityLogsDoc
 from src.database.database import DeviceDoc
+from src.database.database import ProcessWindowDoc
 from src.historical.domain import model
 from src.historical.domain.mapper import activitylogs_to_domain
+from src.historical.domain.mapper import process_window_to_domain
+from src.historical.domain.model import ProcessWindowLevel
 from src.settings import get_logger
 
 # logger
@@ -93,6 +100,17 @@ class AbstractHistoricalRepository(abc.ABC):
         """
         return await self._get_all_by_user(user_id, skip, limit, start_time, stop_time)
 
+    async def get_process_window_by_user_id(self, user_id: str) -> dict[str, list[ProcessWindowLevel]]:
+        """Get a dict of process window levels by user id.
+
+        Args:
+            user_id (str): User ID to filter process windows.
+
+        Returns:
+            dict[str, list[ProcessWindowLevel]]: dict of device id to list of ProcessWindowLevel
+        """
+        return await self._get_process_window_by_user_id(user_id)
+
     @abc.abstractmethod
     async def _get_all_by_device(
         self,
@@ -113,6 +131,10 @@ class AbstractHistoricalRepository(abc.ABC):
         start_time: datetime.datetime | None = None,
         stop_time: datetime.datetime | None = None,
     ) -> list[model.ActivityLogs]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def _get_process_window_by_user_id(self, user_id: str) -> dict[str, list[ProcessWindowLevel]]:
         raise NotImplementedError
 
 
@@ -154,6 +176,11 @@ class BeanieHistoricalRepository(AbstractHistoricalRepository):
         start_time: datetime.datetime | None = None,
         stop_time: datetime.datetime | None = None,
     ) -> list[model.ActivityLogs]:
+        try:
+            user_id = PydanticObjectId(user_id)
+        except InvalidId:
+            raise InvalidArgumentError("Invalid user id format")
+
         devices = await DeviceDoc.find(DeviceDoc.user_id == user_id).to_list()
         device_ids = [d.device_id for d in devices]
 
@@ -175,3 +202,18 @@ class BeanieHistoricalRepository(AbstractHistoricalRepository):
         activities = await ActivityLogsDoc.find(*filters).skip(skip).limit(limit).to_list()
 
         return [activitylogs_to_domain(activity) for activity in activities]
+
+    async def _get_process_window_by_user_id(self, user_id: str) -> dict[str, list[ProcessWindowLevel]]:
+        try:
+            user_id = PydanticObjectId(user_id)
+        except InvalidId:
+            raise InvalidArgumentError("Invalid user id format")
+
+        devices = await DeviceDoc.find(DeviceDoc.user_id == user_id).to_list()
+        device_ids = [d.device_id for d in devices]
+        process_windows: dict[str, list[ProcessWindowLevel]] = defaultdict(list)
+        for device_id in device_ids:
+            datas = await ProcessWindowDoc.find(ProcessWindowDoc.device_id == device_id).to_list()
+            process_windows[device_id] = [process_window_to_domain(data) for data in datas]
+
+        return process_windows

@@ -1,9 +1,13 @@
 """MCP Server Module."""
 
+from enum import Enum
+from typing import Literal
+
 import httpx
 
 from fastmcp import FastMCP
 
+from src.historical.domain.model import GroupByQuery
 from src.mcp_server.settings import settings
 
 mcp = FastMCP("backend-team5-mcp-server")
@@ -12,6 +16,7 @@ ACTIVITY_LOGS_PATH_BY_DEVICE = "/api/historical/device/{device_id}/activities-lo
 ACTIVITY_LOGS_PATH_BY_USER = "/api/historical/user/{user_id}/activities-logs"
 ACTIVITY_SUMMARY_PATH_BY_DEVICE = "/api/historical/device/{device_id}/activity-summary"
 ACTIVITY_SUMMARY_PATH_BY_USER = "/api/historical/user/{user_id}/activity-summary"
+ATTENTION_LEVEL_SUMMARY_PATH_BY_USER = "/api/historical/user/{user_id}/attention-level-summary"
 USERS_PATH = "/api/user"
 
 
@@ -172,6 +177,44 @@ async def get_activity_summary_by_user(
     async with httpx.AsyncClient(base_url=settings.backend_base_url, follow_redirects=True) as client:
         resp = await client.get(
             ACTIVITY_SUMMARY_PATH_BY_USER.format(user_id=user_id),
+            params=params,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@mcp.tool()
+async def get_attention_level_summary_by_user(
+    user_id: str,
+    start_time: str,
+    end_time: str,
+    group_by: list[Literal[GroupByQuery.DAY, GroupByQuery.HOUR]],
+) -> dict:
+    """Get summarized attention level and productivity for a user and time range.
+
+    Args:
+        user_id: User ID
+        start_time: start of window (ISO8601 string)
+        end_time: end of window (ISO8601 string)
+        group_by: grouping dimension (e.g. `day`, 'hour)
+    """
+    params: dict[str, object] = {
+        "start_time": start_time,
+        "end_time": end_time,
+    }
+
+    if group_by:
+        converted_group_by: list[str] = []
+        for g in group_by:
+            if isinstance(g, Enum):
+                converted_group_by.append(g.value)
+            else:
+                converted_group_by.append(str(g))
+        params["group_by"] = converted_group_by
+
+    async with httpx.AsyncClient(base_url=settings.backend_base_url, follow_redirects=True) as client:
+        resp = await client.get(
+            ATTENTION_LEVEL_SUMMARY_PATH_BY_USER.format(user_id=user_id),
             params=params,
         )
         resp.raise_for_status()

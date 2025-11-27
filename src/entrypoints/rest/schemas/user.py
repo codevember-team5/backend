@@ -11,6 +11,12 @@ class GetUsersResponse(BaseModel):
     users: list[model.User]
 
 
+class GetUserResponse(BaseModel):
+    """Get user response schema."""
+
+    user: model.User
+
+
 class CreateUserRequest(BaseModel):
     """Create user request schema."""
 
