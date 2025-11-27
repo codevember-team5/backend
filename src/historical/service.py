@@ -4,6 +4,8 @@ from collections import defaultdict
 from datetime import date
 from datetime import datetime
 
+from src.common.shared import normalize_end
+from src.common.shared import normalize_start
 from src.historical.aggregator import ActivityAggregator
 from src.historical.domain import model
 from src.historical.domain.model import ActivitySummaryResult
@@ -13,8 +15,6 @@ from src.historical.domain.model import GroupByQuery
 from src.historical.domain.model import HourAttentionLevelSummary
 from src.historical.domain.model import ProcessWindowLevel
 from src.historical.repository import AbstractHistoricalRepository
-from src.historical.repository import normalize_end
-from src.historical.repository import normalize_start
 from src.settings import get_logger
 
 logger = get_logger()
