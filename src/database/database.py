@@ -19,7 +19,7 @@ def get_db_connection() -> AsyncMongoClient:
 async def init_db(client: AsyncMongoClient):
     """Initialize the database connection and Beanie ODM."""
     db = client[settings.db.dbname]
-    await init_beanie(database=db, document_models=[UserDoc, DeviceDoc, ActivityLogsDoc])
+    await init_beanie(database=db, document_models=[UserDoc, DeviceDoc, ActivityLogsDoc, ProcessWindowDoc])
 
 
 class UserDoc(Document):
@@ -58,3 +58,17 @@ class ActivityLogsDoc(Document):
         """Settings for UserDoc."""
 
         name = "activity_logs"
+
+
+class ProcessWindowDoc(Document):
+    """Process Window document model."""
+
+    device_id: str = Field(..., description="Device unique identifier")
+    process: str = Field(..., description="Name of the process")
+    window_title: str = Field(..., description="Title of the window")
+    level: int = Field(..., description="Tool productivity level")
+
+    class Settings:
+        """Settings for ProcessWindowDoc."""
+
+        name = "process_windows"

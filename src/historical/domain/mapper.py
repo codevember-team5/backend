@@ -14,3 +14,12 @@ def activitylogs_to_domain(activity_logs: database.ActivityLogsDoc) -> model.Act
         process=activity_logs.process,
         window_title=activity_logs.window_title,
     )
+
+
+def process_window_to_domain(process_window: database.ProcessWindowDoc) -> model.ProcessWindowLevel:
+    """Map ProcessDoc to Process domain model."""
+    return model.ProcessWindowLevel(
+        process=process_window.process,
+        window_title=process_window.window_title,
+        level=process_window.level,
+    )
