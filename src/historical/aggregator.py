@@ -11,10 +11,12 @@ from src.historical.domain.model import ActivityCategory
 from src.historical.domain.model import ActivityCategoryComponentSummary
 from src.historical.domain.model import ActivityCategorySummary
 from src.historical.domain.model import ActivityLogs
+from src.historical.domain.model import ActivityLogsAttentionLevel
 from src.historical.domain.model import ActivitySummaryResult
 from src.historical.domain.model import ClassifiedActivity
 from src.historical.domain.model import DailyActivitySummary
 from src.historical.domain.model import GroupByQuery
+from src.historical.domain.model import ProcessWindowLevel
 from src.settings import get_logger
 
 logger = get_logger()
@@ -164,8 +166,45 @@ class ActivityAggregator:
         return ActivitySummaryResult(
             start_time=start_time,
             stop_time=stop_time,
-            group_by=",".join(group_by),
+            group_by=group_by,
             total_seconds=total_seconds,
             categories=categories_summary,
             days=days_summary,
         )
+
+    def aggregate_attention_levels(
+        self,
+        logs: list[ActivityLogs],
+        process_window: dict[str, list[ProcessWindowLevel]],
+    ) -> list[ActivityLogsAttentionLevel]:
+        """Aggregate attention levels from activity logs."""
+        activity_logs_attention_levels: list[ActivityLogsAttentionLevel] = []
+
+        for log in logs:
+            device_id = log.device_id
+            pw_levels = process_window.get(device_id, [])
+            matched_level = 5  # middle level by default
+
+            for pw in pw_levels:
+                if pw.process.lower() != log.process.lower():
+                    # process name is different
+                    continue
+                if pw.window_title.lower() != log.window_title.lower():
+                    # window title is different
+                    continue
+
+                matched_level = pw.level
+
+            stop_time = log.stop_time or log.start_time
+            total_seconds = (stop_time - log.start_time).total_seconds()
+
+            activity_logs_attention_levels.append(
+                ActivityLogsAttentionLevel(
+                    **log.model_dump(),
+                    level=matched_level,
+                    total_seconds=total_seconds,
+                    total_seconds_productive=matched_level * total_seconds,
+                ),
+            )
+
+        return activity_logs_attention_levels
