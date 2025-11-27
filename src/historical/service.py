@@ -5,6 +5,7 @@ from datetime import datetime
 from src.historical.aggregator import ActivityAggregator
 from src.historical.domain import model
 from src.historical.domain.model import ActivitySummaryResult
+from src.historical.domain.model import GroupByQuery
 from src.historical.repository import AbstractHistoricalRepository
 from src.historical.repository import normalize_end
 from src.historical.repository import normalize_start
@@ -76,7 +77,7 @@ class HistoricalService:
         device_id: str,
         start_time: datetime,
         stop_time: datetime,
-        group_by: str | None = None,
+        group_by: list[GroupByQuery],
         page_size: int = 500,
     ) -> ActivitySummaryResult:
         """Fetch all logs in [start_time, stop_time], classify and aggregate for a device.
@@ -110,7 +111,7 @@ class HistoricalService:
             logs=logs,
             start_time=normalized_start,
             stop_time=normalized_stop,
-            group_by_day=(group_by == "day"),
+            group_by=group_by,
         )
 
     async def get_activity_summary_by_user(
@@ -118,7 +119,7 @@ class HistoricalService:
         user_id: str,
         start_time: datetime,
         stop_time: datetime,
-        group_by: str | None = None,
+        group_by: list[GroupByQuery],
         page_size: int = 500,
     ) -> ActivitySummaryResult:
         """Fetch all logs in [start_time, stop_time], classify and aggregate for a user.
@@ -152,5 +153,5 @@ class HistoricalService:
             logs=logs,
             start_time=normalized_start,
             stop_time=normalized_stop,
-            group_by_day=(group_by == "day"),
+            group_by=group_by,
         )

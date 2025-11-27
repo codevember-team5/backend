@@ -3,7 +3,6 @@
 from datetime import date
 from datetime import datetime
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel
 from pydantic import Field
@@ -86,7 +85,7 @@ class ActivitySummaryResult(BaseModel):
 
     start_time: datetime
     stop_time: datetime
-    group_by: Literal["day"] | None = None
+    group_by: str | None = None
     total_seconds: float
     categories: list[ActivityCategorySummary] = Field(
         default_factory=list,
@@ -96,3 +95,10 @@ class ActivitySummaryResult(BaseModel):
         default_factory=list,
         description="Daily breakdown when group_by == 'day'.",
     )
+
+
+class GroupByQuery(str, Enum):
+    """Group by query enum."""
+
+    HOURLY = "hourly"
+    DAY = "day"

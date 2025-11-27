@@ -10,6 +10,7 @@ from starlette import status
 from src.entrypoints.rest.schemas.historical import GetActivitiesLogsResponse
 from src.entrypoints.rest.schemas.shared import ErrorResponseSchema
 from src.historical.domain.model import ActivitySummaryResult
+from src.historical.domain.model import GroupByQuery
 from src.historical.repository import BeanieHistoricalRepository
 from src.historical.service import HistoricalService
 
@@ -139,9 +140,8 @@ async def get_activity_summary_by_device(
             "23:59 UTC will be used."
         ),
     ),
-    group_by: str | None = Query(
-        None,
-        pattern="^(day)$",
+    group_by: list[GroupByQuery] = Query(
+        [],
         description="Optional grouping dimension; currently only 'day'.",
     ),
     historical_service: HistoricalService = Depends(historical_service_factory),
@@ -182,9 +182,8 @@ async def get_activity_summary_by_user(
             "23:59 UTC will be used."
         ),
     ),
-    group_by: str | None = Query(
-        None,
-        pattern="^(day)$",
+    group_by: list[GroupByQuery] = Query(
+        [],
         description="Optional grouping dimension; currently only 'day'.",
     ),
     historical_service: HistoricalService = Depends(historical_service_factory),
