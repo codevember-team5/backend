@@ -10,7 +10,7 @@ from src.historical.domain.model import ActivitySummaryResult
 from src.historical.domain.model import AttentionLevelSummaryResult
 from src.historical.domain.model import DailyAttentionLevelSummary
 from src.historical.domain.model import GroupByQuery
-from src.historical.domain.model import HourlyAttentionLevelSummary
+from src.historical.domain.model import HourAttentionLevelSummary
 from src.historical.domain.model import ProcessWindowLevel
 from src.historical.repository import AbstractHistoricalRepository
 from src.historical.repository import normalize_end
@@ -205,8 +205,8 @@ class HistoricalService:
         if GroupByQuery.DAY in group_by:
             days_summary = self._build_daily_summary(logs, process_window)
 
-        hours_summary: list[HourlyAttentionLevelSummary] = []
-        if GroupByQuery.HOURLY in group_by:
+        hours_summary: list[HourAttentionLevelSummary] = []
+        if GroupByQuery.HOUR in group_by:
             hours_summary = self._build_hourly_summary(logs, process_window)
 
         return AttentionLevelSummaryResult(
@@ -243,18 +243,18 @@ class HistoricalService:
         self,
         logs: list[model.ActivityLogs],
         process_window: dict[str, list[ProcessWindowLevel]],
-    ) -> list[HourlyAttentionLevelSummary]:
+    ) -> list[HourAttentionLevelSummary]:
         """Build hourly attention level summary."""
         by_hour: dict[datetime, list[model.ActivityLogs]] = defaultdict(list)
         for log in logs:
             hour_start = log.start_time.replace(minute=0, second=0, microsecond=0)
             by_hour[hour_start].append(log)
 
-        summaries: list[HourlyAttentionLevelSummary] = []
+        summaries: list[HourAttentionLevelSummary] = []
         for hour_start, hour_logs in sorted(by_hour.items(), key=lambda x: x[0]):
             productivity = self._compute_productivity_for_logs(hour_logs, process_window)
             summaries.append(
-                HourlyAttentionLevelSummary(
+                HourAttentionLevelSummary(
                     hour=hour_start,
                     percentage=round(productivity, 2),
                 ),

@@ -11,7 +11,7 @@ from pydantic import Field
 class GroupByQuery(str, Enum):
     """Group by query enum."""
 
-    HOURLY = "hourly"
+    HOUR = "hour"
     DAY = "day"
 
 
@@ -130,8 +130,8 @@ class DailyAttentionLevelSummary(BaseModel):
     percentage: float
 
 
-class HourlyAttentionLevelSummary(BaseModel):
-    """Hourly attention level summary model."""
+class HourAttentionLevelSummary(BaseModel):
+    """Hour attention level summary model."""
 
     hour: datetime
     percentage: float
@@ -147,7 +147,7 @@ class AttentionLevelSummaryResult(BaseModel):
         default_factory=list,
         description="Daily breakdown when group_by == 'day'.",
     )
-    hours: list[HourlyAttentionLevelSummary] = Field(
+    hours: list[HourAttentionLevelSummary] = Field(
         default_factory=list,
-        description="Hourly breakdown when group_by == 'hourly'.",
+        description="Hourly breakdown when group_by == 'hour'.",
     )
