@@ -4,7 +4,6 @@ import abc
 import datetime
 
 from collections import defaultdict
-from datetime import time
 
 from beanie import PydanticObjectId
 from beanie.odm.operators.find.comparison import GTE
@@ -16,6 +15,7 @@ from beanie.odm.operators.find.comparison import In
 from bson.errors import InvalidId
 
 from src.common.exceptions import InvalidArgumentError
+from src.common.shared import normalize_end
 from src.database.database import ActivityLogsDoc
 from src.database.database import DeviceDoc
 from src.database.database import ProcessWindowDoc
@@ -27,26 +27,6 @@ from src.settings import get_logger
 
 # logger
 logger = get_logger()
-
-
-def normalize_end(stop_time: datetime.datetime) -> datetime.datetime:
-    """Normalize the end time to the end of the day if no time is specified."""
-    # User DID NOT specify a time -> set to end of day
-    if stop_time.hour == 0 and stop_time.minute == 0 and stop_time.second == 0 and stop_time.microsecond == 0:
-        return datetime.datetime.combine(stop_time.date(), time.max, tzinfo=datetime.UTC)
-
-    # User specified hh:mm:ss -> keep as is
-    return stop_time
-
-
-def normalize_start(start_time: datetime.datetime) -> datetime.datetime:
-    """Normalize the start time to the start of the day if no time is specified."""
-    # User DID NOT specify a time -> set to start of day
-    if start_time.hour == 0 and start_time.minute == 0 and start_time.second == 0 and start_time.microsecond == 0:
-        return datetime.datetime.combine(start_time.date(), time.min, tzinfo=datetime.UTC)
-
-    # User specified hh:mm:ss -> keep as is
-    return start_time
 
 
 class AbstractHistoricalRepository(abc.ABC):
