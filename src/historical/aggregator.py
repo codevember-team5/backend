@@ -14,6 +14,7 @@ from src.historical.domain.model import ActivityLogs
 from src.historical.domain.model import ActivitySummaryResult
 from src.historical.domain.model import ClassifiedActivity
 from src.historical.domain.model import DailyActivitySummary
+from src.historical.domain.model import GroupByQuery
 from src.settings import get_logger
 
 logger = get_logger()
@@ -144,7 +145,7 @@ class ActivityAggregator:
         logs: Iterable[ActivityLogs],
         start_time: datetime,
         stop_time: datetime,
-        group_by_day: bool = False,
+        group_by: list[GroupByQuery],
     ) -> ActivitySummaryResult:
         """Classify and aggregate activity logs."""
         classified_activities = self.classifier.classify_logs(
@@ -157,13 +158,13 @@ class ActivityAggregator:
         total_seconds, categories_summary = self._aggregate_activities(classified_activities)
 
         days_summary: list[DailyActivitySummary] = []
-        if group_by_day:
+        if GroupByQuery.DAY in group_by:
             days_summary = self._aggregate_by_day(classified_activities)
 
         return ActivitySummaryResult(
             start_time=start_time,
             stop_time=stop_time,
-            group_by="day" if group_by_day else None,
+            group_by=",".join(group_by),
             total_seconds=total_seconds,
             categories=categories_summary,
             days=days_summary,
